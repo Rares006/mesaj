@@ -846,6 +846,12 @@ margin-top: 15px;
     font-size: 24px;
     letter-spacing: 4px;
 }
+
+.nav-tab {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+}
 }
 </style>
 </head>
@@ -2430,10 +2436,27 @@ document.querySelectorAll('.nav-tab').forEach(tab => {
         showTab(tabName);
     });
 });
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
+document.querySelectorAll('.nav-tab').forEach(tab => {
+    // Click pentru desktop
+    tab.addEventListener('click', (e) => {
+        e.preventDefault();
         const tabName = tab.getAttribute('data-tab');
         showTab(tabName);
+    });
+    
+    // Touch pentru mobil
+    tab.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        tab.style.transform = 'translateY(-1px)';
+    });
+    
+    tab.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        setTimeout(() => {
+            tab.style.transform = '';
+            const tabName = tab.getAttribute('data-tab');
+            showTab(tabName);
+        }, 100);
     });
 });
 }

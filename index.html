@@ -2742,4 +2742,19 @@ window.messages = messages;
 window.showTab = showTab;
 window.deleteParticipant = deleteParticipant;
 window.openPhotoModal = openPhotoModal;
+
+// Adaugă la sfârșitul fișierului, înainte de închiderea script-ului
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && window.autoSync) {
+        // Când utilizatorul revine pe tab, sincronizează
+        setTimeout(window.autoSync, 1000);
+    }
+});
+
+// Sincronizare când se schimbă focus-ul pe fereastră
+window.addEventListener('focus', function() {
+    if (window.autoSync) {
+        setTimeout(window.autoSync, 1000);
+    }
+});
 </script>

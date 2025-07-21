@@ -4,6 +4,7 @@
 <html lang="ro">
 <head>
 <meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tabăra 2025 - Mesaje QR</title>
 <style>
@@ -316,17 +317,17 @@ font-weight: bold;
 }
 
 .qr-code {
-text-align: center;
-margin: 10px 0;
+    text-align: center;
+    margin: 10px 0;
 }
 
-.qr-code canvas {
-border: 3px solid #4c63d2;
-border-radius: 10px;
-padding: 8px;
-background: white;
-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-max-width: 100%;
+.qr-code div {
+    display: inline-block;
+    border: 3px solid #4c63d2;
+    border-radius: 10px;
+    padding: 8px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .camera-container {
@@ -1210,43 +1211,6 @@ async function loadMessagesFromFirebase() {
     }
 }
 
-// Funcție pentru sincronizare automată
-async function autoSync() {
-    if (!window.firebaseInitialized) return;
-    
-    try {
-        const firebaseParticipants = await window.loadParticipantsFromFirebase();
-        const firebaseMessages = await window.loadMessagesFromFirebase();
-        
-        let updated = false;
-        
-        if (firebaseParticipants.length > participants.length) {
-            participants = firebaseParticipants;
-            localStorage.setItem('participants', JSON.stringify(participants));
-            loadParticipants();
-            loadQuickParticipants();
-            updated = true;
-        }
-        
-        if (firebaseMessages.length > messages.length) {
-            messages = firebaseMessages;
-            localStorage.setItem('messages', JSON.stringify(messages));
-            updateParticipantMessages();
-            if (isLoggedIn) displayAllMessages();
-            updated = true;
-        }
-        
-        if (updated) {
-            console.log('Date sincronizate automat din cloud');
-        }
-    } catch (error) {
-        console.error('Eroare la sincronizarea automată:', error);
-    }
-}
-
-// Fă funcția disponibilă global
-window.autoSync = autoSync;
-
 // Fă funcțiile disponibile global
 window.loadParticipantsFromFirebase = loadParticipantsFromFirebase;
 window.loadMessagesFromFirebase = loadMessagesFromFirebase;
@@ -1786,7 +1750,9 @@ card.innerHTML = `
         ${passwordStatusIcon} ${passwordStatusText}
     </div>
     <div class="qr-code">
-        <canvas id="qr-${participant.id}" width="120" height="120"></canvas>
+        <div class="qr-code">
+    <div id="qr-${participant.id}"></div>
+</div>
     </div>
     <div style="text-align: center; margin: 10px 0;">
         <button class="btn btn-danger" onclick="deleteParticipant(${participant.id})">🗑️ Șterge</button>
@@ -1838,50 +1804,22 @@ return card;
 }
 
 function generateQRCode(participantId, name) {
-const canvas = document.getElementById(`qr-${participantId}`);
-if (!canvas) return;
-
-const ctx = canvas.getContext('2d');
-const size = 120;
-
-ctx.clearRect(0, 0, size, size);
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(0, 0, size, size);
-ctx.fillStyle = '#000000';
-const cellSize = size / 21;
-
-for (let i = 0; i < 21; i++) {
-    for (let j = 0; j < 21; j++) {
-        const hash = hashCode(participantId.toString() + i + j);
-        if (hash % 2 === 0) {
-            ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
-        }
-    }
+    const qrCodeDiv = document.getElementById(`qr-${participantId}`);
+    if (!qrCodeDiv) return;
+    
+    qrCodeDiv.innerHTML = ''; // Șterge conținutul anterior
+    
+    new QRCode(qrCodeDiv, {
+        text: participantId.toString(),
+        width: 120,
+        height: 120,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
 }
 
-const cornerSize = 7;
 
-ctx.fillStyle = '#000000';
-ctx.fillRect(0, 0, cornerSize * cellSize, cornerSize * cellSize);
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(cellSize, cellSize, (cornerSize - 2) * cellSize, (cornerSize - 2) * cellSize);
-ctx.fillStyle = '#000000';
-ctx.fillRect(2 * cellSize, 2 * cellSize, (cornerSize - 4) * cellSize, (cornerSize - 4) * cellSize);
-
-ctx.fillStyle = '#000000';
-ctx.fillRect((21 - cornerSize) * cellSize, 0, cornerSize * cellSize, cornerSize * cellSize);
-ctx.fillStyle = '#ffffff';
-ctx.fillRect((21 - cornerSize + 1) * cellSize, cellSize, (cornerSize - 2) * cellSize, (cornerSize - 2) * cellSize);
-ctx.fillStyle = '#000000';
-ctx.fillRect((21 - cornerSize + 2) * cellSize, 2 * cellSize, (cornerSize - 4) * cellSize, (cornerSize - 4) * cellSize);
-
-ctx.fillStyle = '#000000';
-ctx.fillRect(0, (21 - cornerSize) * cellSize, cornerSize * cellSize, cornerSize * cellSize);
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(cellSize, (21 - cornerSize + 1) * cellSize, (cornerSize - 2) * cellSize, (cornerSize - 2) * cellSize);
-ctx.fillStyle = '#000000';
-ctx.fillRect(2 * cellSize, (21 - cornerSize + 2) * cellSize, (cornerSize - 4) * cellSize, (cornerSize - 4) * cellSize);
-}
 
 function loadQuickParticipants() {
 const container = document.getElementById('quickParticipantList');
@@ -2742,19 +2680,4 @@ window.messages = messages;
 window.showTab = showTab;
 window.deleteParticipant = deleteParticipant;
 window.openPhotoModal = openPhotoModal;
-
-// Adaugă la sfârșitul fișierului, înainte de închiderea script-ului
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && window.autoSync) {
-        // Când utilizatorul revine pe tab, sincronizează
-        setTimeout(window.autoSync, 1000);
-    }
-});
-
-// Sincronizare când se schimbă focus-ul pe fereastră
-window.addEventListener('focus', function() {
-    if (window.autoSync) {
-        setTimeout(window.autoSync, 1000);
-    }
-});
 </script>

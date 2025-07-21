@@ -1809,8 +1809,10 @@ function generateQRCode(participantId, name) {
     
     qrCodeDiv.innerHTML = ''; // Șterge conținutul anterior
     
+    const url = `${window.location.origin}${window.location.pathname}?tab=scan&participantId=${participantId}`;
+    
     new QRCode(qrCodeDiv, {
-        text: participantId.toString(),
+        text: url,
         width: 120,
         height: 120,
         colorDark: "#000000",
@@ -1818,8 +1820,6 @@ function generateQRCode(participantId, name) {
         correctLevel: QRCode.CorrectLevel.H
     });
 }
-
-
 
 function loadQuickParticipants() {
 const container = document.getElementById('quickParticipantList');
@@ -2462,38 +2462,28 @@ showTab('participantMessages');
 
 // ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
-    // Adaugă acestea la începutul funcției setupEventListeners()
-document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        const tabName = tab.getAttribute('data-tab');
-        showTab(tabName);
-    });
-});
-document.querySelectorAll('.nav-tab').forEach(tab => {
-    // Click pentru desktop
-    tab.addEventListener('click', (e) => {
-        e.preventDefault();
-        const tabName = tab.getAttribute('data-tab');
-        showTab(tabName);
-    });
-    
-    // Touch pentru mobil
-    tab.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        tab.style.transform = 'translateY(-1px)';
-    });
-    
-    tab.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        setTimeout(() => {
-            tab.style.transform = '';
-            const tabName = tab.getAttribute('data-tab');
-            showTab(tabName);
-        }, 100);
-    });
-});
-}
+    // ...
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const participantIdParam = urlParams.get('participantId');
+
+    if (tabParam === 'scan' && participantIdParam) {
+        const participant = participants.find(p => p.id === parseInt(participantIdParam));
+        if (participant) {
+            currentRecipient = participant;
+            const targetName = document.getElementById('targetName');
+            if (targetName) targetName.textContent = participant.name;
+            
+            const messageForm = document.getElementById('messageForm');
+            if (messageForm) messageForm.classList.remove('hidden');
+            
+            showTab('scan');
+        }
+    }
+
+    // ...
+}
 const addParticipantBtn = document.getElementById('addParticipantBtn');
 if (addParticipantBtn) {
     addParticipantBtn.addEventListener('click', addParticipant);
